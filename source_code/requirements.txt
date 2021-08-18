@@ -1,0 +1,15 @@
+asgiref
+autopep8
+django==2.2.10
+pycodestyle
+pytz
+sqlparse
+Unipath
+dj-database-url
+python-decouple
+gunicorn
+whitenoise
+mysqlclient
+google-cloud-bigquery
+pandas==1.2.4
+pandas-gbq==0.15.0

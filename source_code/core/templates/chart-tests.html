@@ -1,0 +1,174 @@
+{% extends "layouts/base.html" %}
+
+{% block title %} chart-tests {% endblock %} 
+
+<!-- Specific CSS goes HERE -->
+{% block stylesheets %}
+{% endblock stylesheets %}
+
+{% block content %}
+<div style="width: 1000px;">
+  <canvas id="myChart"></canvas>
+</div>
+{% endblock content %}
+
+<!-- Specific Page JS goes HERE  -->
+{% block javascripts %}
+
+<!-- Chart.js -->
+<!-- <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/chart.js@3.4.0/dist/chart.min.js"></script> -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+
+const csrftoken = getCookie('csrftoken');
+
+intervalId = setInterval(() => {
+  console.log('in interval')
+  $.ajaxSetup({
+          headers: {
+              "X-CSRFToken": csrftoken,
+          }
+      });
+  $.ajax({
+    url: 'get-audience-chart-data/',
+    method: 'GET',
+    dataType: 'text',
+    success: (returneddata) => {
+      console.log('Ajax request success for Audience chart data');
+      console.log(returneddata);
+
+      const data = {
+        labels: returneddata.personaslist,
+        datasets: [{
+          label: 'Audience',
+          backgroundColor: 'rgb(192,192,192)',
+          borderColor: 'rgb(169,169,169)',
+          data: returneddata.chartdata,
+          barThickness: 18,
+          // borderRadius: 3
+        }]
+      }
+
+      const config = {
+        type: 'bar',
+        data: data,
+        options: {
+          scales: {
+            x: {
+              ticks: {
+                font: {
+                  size: 14
+                }
+              }
+            },
+            y: {
+              ticks: {
+                font: {
+                  size: 20,
+                  weight: 'bold'
+                }
+              }
+            }
+          },
+          indexAxis: 'y',
+          // Elements options apply to all of the options unless overridden in a dataset
+          // In this case, we are setting the border of each horizontal bar to be 2px wide
+          elements: {
+            bar: {
+              borderWidth: 2,
+            }
+          },
+          responsive: true,
+          plugins: {
+            legend: {
+              display: false,
+              position: 'right',
+              // labels: {
+              //   font: {
+              //     size: 14
+              //   }
+              // }
+            },
+            title: {
+              display: false,
+              text: 'Audience Distribution'
+            }
+          }
+        }
+      }
+
+      new Chart(document.getElementById('myChart'), config);
+
+      clearInterval(intervalId);
+    },
+    error: (item, texterror, err) => {
+      console.log('Error in the Ajax request for Audience chart data');
+      console.log(texterror);
+      console.log(err);
+    }
+  });
+}, 3000)
+
+
+  // const labels = [
+  //   'Emotives',
+  //   'Audacious',
+  //   'Analyticals',
+  //   'Homebodies',
+  //   'Straightforwards',
+  //   'Hedonists',
+  //   'Altruists',
+  //   'Trend Setters',
+  //   'Attentives',
+  //   'Conventionals',
+  // ];
+  // const data = {
+  //   labels: labels,
+  //   datasets: [{
+  //     label: 'Audience',
+  //     backgroundColor: 'rgb(192,192,192)',
+  //     borderColor: 'rgb(169,169,169)',
+  //     data: [20, 18, 14, 13, 11, 8, 6, 4, 3, 3],
+  //     barThickness: 18,
+  //     borderRadius: 3
+  //   }]
+  // };
+
+  // const config = {
+  //   type: 'bar',
+  //   data: data,
+  //   options: {
+  //     // scales: {
+  //     //   x: {
+  //     //     max: 100,
+  //     //     ticks: {
+  //     //       stepSize: 5
+  //     //     }
+  //     //   }
+  //     // },
+  //     indexAxis: 'y',
+  //     // Elements options apply to all of the options unless overridden in a dataset
+  //     // In this case, we are setting the border of each horizontal bar to be 2px wide
+  //     elements: {
+  //       bar: {
+  //         borderWidth: 2,
+  //       }
+  //     },
+  //     responsive: true,
+  //     plugins: {
+  //       legend: {
+  //         position: 'right'
+  //       },
+  //       title: {
+  //         display: false,
+  //         text: 'Audience Distribution'
+  //       }
+  //     }
+  //   }
+  // };
+
+  // new Chart(document.getElementById('myChart'), config);
+
+</script>  
+{% endblock javascripts %}

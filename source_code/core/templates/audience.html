@@ -1,0 +1,327 @@
+{% extends "layouts/base.html" %}
+{% load i18n %}
+
+{% block title %}
+  Audience
+{% endblock %}
+
+<!-- Specific CSS goes HERE -->
+{% block stylesheets %}
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.5.3/dist/css/bootstrap.min.css" integrity="sha384-TX8t27EcRE3e/ihU7zmQxVncDAy5uIKz4rEkgIXeMed4M0jlfIDPvg6uqKI2xXr2" crossorigin="anonymous">
+  <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.css"/>
+  <link rel="stylesheet" type="text/css" href="/static/assets/css/audience.css">
+{% endblock stylesheets %}
+
+{% block content %}
+
+  <div class="pcoded-content">
+    <div class="pcoded-inner-content">
+      <!-- [ breadcrumb ] end -->
+      <div class="main-body">
+        <div class="page-wrapper">
+          <!-- [ Main Content ] start -->
+          <!-- [ badge ] start -->
+          <div class="row ">
+            <div class="col-md-6 col-xl-6">
+              <div class="card">
+                <div class="card-block">
+                  <div class="d-flex p-2 align-items-center">
+                    <div class="col-md">
+                      <h6 class="mb-6 pr-5">{% trans "Page Type" %}</h6>
+                    </div>
+                    <div class="col-md-9">
+                      <div class="dropdown">
+                        <button id="dropdownMenuButton" class="btn btn-primary dropdown-toggle" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                          {% trans "Unfiltered" %}
+                        </button>
+                        <div class="dropdown-menu dropdown-container" aria-labelledby="dropdownMenuButton"></div>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="d-flex p-2 align-items-center pb-3">
+                    <div class="col-md">
+                      <h6 class="mb-6 pr-4">{% trans "Device Type" %}</h6>
+                    </div>
+                    <div class="col-md-9">
+                      <div class="btn-group btn-group-toggle" data-toggle="buttons">
+                        <label class="btn btn-primary active" onclick="deviceSelection('Unfiltered')">
+                          <input type="radio" name="options" id="option1" autocomplete="off" checked="checked">
+                          <span class="device-icon feather icon-monitor"></span>
+                          <span class="device-icon feather icon-smartphone"></span>
+                        </label>
+                        <label class="btn btn-primary" onclick="deviceSelection('Desktop')">
+                          <input type="radio" name="options" id="option2" autocomplete="off">
+                          <span class="device-icon feather icon-monitor"></span>
+                        </label>
+                        <label class="btn btn-primary" onclick="deviceSelection('Mobile')">
+                          <input type="radio" name="options" id="option3" autocomplete="off">
+                          <span class="device-icon feather icon-smartphone"></span>
+                        </label>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-6 col-xl-6">
+              <div class="card">
+                <div class="card-block">
+                  <div class="p-2 d-flex justify-content-between flex-wrap">
+                    <input type="text" class="daterange-picker p-2" name="daterange" value="01/01/2021 - 06/15/2021"/>
+                    <div class="share-buttons d-flex p-2 justify-content-center">
+                      <div class="export-wrapper d-flex mr-4 justify-content-center">
+                        <i class="feather icon-download mr-2"></i>
+                        <h6 class="label-export mb-0">{% trans "Export" %}</h6>
+                      </div>
+                      <div class="share-wrapper d-flex mr-3 justify-content-center">
+                        <i class="feather icon-share-2 mr-2"></i>
+                        <h6 class="label-export mb-0">{% trans "Share" %}</h6>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="d-flex p-2 align-items-center">
+                    <input class="btn-check" type="checkbox" id="btn-check" style="display: none;" onclick="groupSegment()">
+                    <label id="btn-check-label" for="btn-check" class="btn btn-primary">{% trans "Group Segments" %}</label>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="row">
+            <div class="col-xl-12">
+              <div class="card">
+                <div class="card-block">
+                  <div class="d-flex justify-content-center">
+                    <div id="audience-chart-spinner" class="spinner-border" role="status">
+                      <span class="sr-only">Loading...</span>
+                    </div>
+                  </div>
+                  <canvas id="audience-chart"></canvas>
+                </div>
+              </div>
+            </div>
+          </div>
+          <!-- [ badge ] end -->
+        </div>
+        <!-- [ Main Content ] end -->
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock content %}
+
+<!-- Specific Page JS goes HERE -->
+{% block javascripts %}
+
+<!-- Chart.js -->
+<!-- <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/chart.js@3.4.0/dist/chart.min.js"></script> -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
+
+<!-- <script type="text/javascript" src="https://cdn.jsdelivr.net/jquery/latest/jquery.min.js"></script> -->
+<script type="text/javascript" src="https://cdn.jsdelivr.net/momentjs/latest/moment.min.js"></script>
+<script type="text/javascript" src="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.min.js"></script>
+
+<script>
+  const csrftoken = getCookie('csrftoken');
+  var requested_page_types = [];
+
+  $(() => {
+
+    $.ajaxSetup({
+      headers: {
+        "X-CSRFToken": csrftoken
+      }
+    });
+    $.ajax({
+      url: 'get-page-types/',
+      method: 'GET',
+      dataType: 'json',
+      success: (returneddata) => {
+        requested_page_types = ['Unfiltered'].concat(Object.values(returneddata));
+        dates = $('.daterange-picker')
+          .val()
+          .split(' - ');
+        date_start = moment(Date.parse(dates[0])).format('YYYY-MM-DD');
+        date_end = moment(Date.parse(dates[1])).format('YYYY-MM-DD');
+        group_segments = false;
+        page_type = requested_page_types[0];
+        device_type = 'Unfiltered';
+
+        // Populate the dropdown button with what the endpoint returns
+        var dropdownstr = ''
+        requested_page_types.forEach((value) => {
+          dropdownstr += '<a class="dropdown-item" onclick="dropdownSelection(\'' + value + '\')" href="#">{% trans "' + value + '" %}</a>'
+
+        })
+        $('.dropdown-container').html(dropdownstr);
+        // end
+
+        this.requestChartData();
+      },
+      error: (code, textError, err) => {
+        console.log('ERROR')
+        console.log(code)
+        console.log(textError)
+        console.log(err)
+      }
+    });
+
+  });
+
+  $(function chooseDate() {
+    $('input[name="daterange"]').daterangepicker({
+      opens: 'left'
+    }, function (start, end, label) {
+      console.log("A new date selection was made: " + start.format('YYYY-MM-DD') + ' to ' + end.format('YYYY-MM-DD'));
+      date_start = start.format('YYYY-MM-DD');
+      date_end = end.format('YYYY-MM-DD');
+      requestChartData();
+    });
+  });
+
+  function dropdownSelection(value) {
+    $('#dropdownMenuButton').html(value);
+    page_type = value;
+    this.requestChartData();
+  }
+
+  function deviceSelection(value) {
+    device_type = value;
+    this.requestChartData();
+  }
+
+  function groupSegment() {
+    group_segments = $("#btn-check").is(':checked');
+    if ($('#btn-check-label').hasClass('active')) {
+      $('#btn-check-label').removeClass('active')
+    } else {
+      $('#btn-check-label').addClass('active');
+    }
+    this.requestChartData();
+  }
+
+  var chart = null;
+
+  var page_type = null;
+  var device_type = null;
+  var date_start = null;
+  var date_end = null;
+  var group_segments = false;
+
+  function requestChartData() {
+
+    try {
+      chart.destroy();
+      $("#audience-chart-spinner").css("display", "inline-block");
+    } catch  {
+      console.log('Chart not yet initialized');
+    }
+
+    requestParams = {
+      page_type,
+      device_type,
+      date_start,
+      date_end,
+      group_segments
+    }
+
+    console.log(requestParams)
+
+    $.ajaxSetup({
+      headers: {
+        "X-CSRFToken": csrftoken
+      }
+    });
+    $.ajax({
+      url: 'get-audience-chart-data/',
+      method: 'POST',
+      dataType: 'json',
+      data: requestParams,
+      success: (returneddata) => {
+        console.log('Ajax request success for Audience chart data');
+
+        const data = {
+          labels: returneddata.personaslist,
+          datasets: [
+            {
+              label: 'Audience',
+              backgroundColor: 'rgb(118, 190, 209, 1)',
+              borderColor: 'rgb(118, 190, 209, 1)',
+              data: returneddata.chartdata,
+              barPercentage: 0.6,
+              categoryPercentage: 0.6,
+              datalabels: {
+                font: {
+                  size: 18,
+                  // weight: 'bold'
+                },
+                color: '#fff',
+                formatter: (value, context) => {
+                  console.log('in formatter')
+                  return Math.round(returneddata.percentage[context.dataIndex]) + '%';
+                }
+              }
+            }
+          ]
+        }
+
+        const config = {
+          // Chart config
+          type: 'bar',
+          data: data,
+          plugins: [ChartDataLabels],
+          options: {
+            scales: {
+              x: {
+                ticks: {
+                  font: {
+                    size: 14
+                  }
+                }
+              },
+              y: {
+                ticks: {
+                  font: {
+                    size: 16,
+                    // weight: 'bold'
+                  }
+                }
+              }
+            },
+            indexAxis: 'y',
+            // Elements options apply to all of the options unless overridden in a dataset
+            // In this case, we are setting the border of each horizontal bar to be 2px wide
+            elements: {
+              bar: {
+                borderWidth: 2
+              }
+            },
+            responsive: true,
+            plugins: {
+              legend: {
+                display: false,
+                position: 'right'
+              },
+              title: {
+                display: false,
+                text: 'Audience Distribution'
+              }
+            }
+          }
+        }
+
+        chart = new Chart($('#audience-chart'), config);
+        $("#audience-chart-spinner").css("display", "none");
+      },
+      error: (item, texterror, err) => {
+        console.log('Error in the Ajax request for Audience chart data');
+        console.log(item);
+        console.log(texterror);
+        console.log(err);
+      }
+    });
+  }
+</script>
+{% endblock javascripts %}

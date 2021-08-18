@@ -1,0 +1,35 @@
+body {
+  font-family: "Open Sans", sans-serif;
+}
+
+.btn-primary {
+  background-color: #76bed1 !important;
+  border-color: #76bed1 !important;
+}
+
+.btn-primary:visited, .btn-primary:hover {
+  background-color: #1394b4 !important;
+  border-color: #1394b4 !important;
+}
+
+.btn.btn-primary.active, .btn.btn-primary:active, .btn.btn-primary[aria-expanded=true] {
+  background-color: #1386a3 !important;
+  border-color: #1386a3 !important;
+}
+
+.pcoded-wrapper {
+  background-color: #f4f7fa;
+}
+
+.device-icon {
+  font-size: 1.75rem;
+}
+
+#audience-chart {
+  margin: 0 0 0 2rem;
+}
+
+.share-wrapper:hover, .export-wrapper:hover, .share-wrapper:hover > *, .export-wrapper:hover > * {
+  color: grey;
+  cursor: not-allowed;
+}
